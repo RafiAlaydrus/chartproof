@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets and local state
+.env
+.cache/
+
+# Data and generated files (never committed)
+data/
+vendor/
+outputs/
+*.sqlite
