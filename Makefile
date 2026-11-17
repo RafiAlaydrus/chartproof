@@ -1,6 +1,6 @@
 PY = .venv/bin/python
 
-.PHONY: setup test lint
+.PHONY: setup test lint db
 
 setup:
 	uv venv --python 3.11 .venv
@@ -13,3 +13,6 @@ test:
 lint:
 	$(PY) -m ruff check .
 	$(PY) -m ruff format --check .
+
+db:
+	$(PY) -m chartproof.store.build
