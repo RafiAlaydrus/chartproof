@@ -157,3 +157,15 @@ A patient's data can be found by searching `subject = Patient/<id>`, except for 
 
 - The nine "Observation" files hold different kinds of data (chart events, datetime events, lab events, output events, microbiology, ED). They all share `resourceType` Observation. The source table is recorded in `meta.profile` (for example `.../mimic-observation-chartevents`), which the benchmark's `main_table_name` likely corresponds to. Phase 4 keeps `meta` in the stored JSON for that reason, even though the client strips it from results.
 - Several files hold the same `resourceType` (for example Condition and ConditionED), so a resource is identified by `(type, id)` and not by file.
+
+## Local SQLite store
+
+`make db` (or `python -m chartproof.store.build`) loads every resource into `data/fhir.sqlite`, which is gitignored. It takes under a minute and the per-type counts match the table above.
+
+- `resources(id, type, patient_id, encounter_id, effective_time, effective_field, json)`, primary key `(type, id)`. `json` is the original line, unchanged, so `meta` is kept.
+- `refs(src_type, src_id, field, dst_type, dst_id)` holds every reference found anywhere in a resource, using the same field paths as the inspect script. Every reference in the demo resolves to a stored resource.
+- Indexes: `(type, patient_id)`, `(encounter_id)`, `(effective_time)` on `resources`, and `(src_type, src_id)` and `(dst_type, dst_id)` on `refs`.
+- `patient_id` comes from `subject` or `patient`. A Patient is its own patient. `Medication`, `Location` and `Organization` have none.
+- `encounter_id` comes from `encounter` or `context`.
+- `effective_time` is the first present of: `effectiveDateTime`, `issued`, `authoredOn`, `period.start`, `effectivePeriod.start` (the plan's five), then `performedDateTime`, `performedPeriod.start`, `collection.collectedDateTime`, `whenHandedOver`, `dateAsserted` (added because Procedure, Specimen, MedicationDispense and MedicationStatement have none of the first five). `effective_field` records which one was used.
+- `Condition` resources have no time of their own, so `effective_time` is NULL. Their time has to come from their encounter. Most `MedicationDispense` resources are the same.
